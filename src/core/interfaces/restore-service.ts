@@ -4,7 +4,7 @@ import {rmSync, unlinkSync} from 'fs';
 import {redact} from '../../infrastructure/log/redact';
 import {S3StorageService} from '../../infrastructure/storage/services/s3-storage-service';
 
-export abstract class RollupService {
+export abstract class RestoreService {
   protected abstract readonly engine: 'postgres' | 'mysql';
 
   protected abstract restore(
@@ -22,15 +22,15 @@ export abstract class RollupService {
         rmSync(filename, {force: true});
         this.logger.error(
           {
-            logId: 'rollup.download-failed',
+            logId: 'restore.download-failed',
             engine: this.engine,
             filename,
             err: downloadError,
             errorName: downloadError.name,
             errorMessage: redact(downloadError.message),
           },
-          'rollup.download-failed',
-          RollupService.name,
+          'restore.download-failed',
+          RestoreService.name,
         );
         return {ok: false};
       }
@@ -41,15 +41,15 @@ export abstract class RollupService {
     if (!result.ok) {
       this.logger.error(
         {
-          logId: 'rollup.restore-failed',
+          logId: 'restore.restore-failed',
           engine: this.engine,
           filename,
           err: result.error,
           errorName: result.error.name,
           errorMessage: redact(result.error.message),
         },
-        'rollup.restore-failed',
-        RollupService.name,
+        'restore.restore-failed',
+        RestoreService.name,
       );
       this.deleteDownloadedFile(filename, local);
       return {ok: false};
@@ -57,12 +57,12 @@ export abstract class RollupService {
 
     this.logger.log(
       {
-        logId: 'rollup.completed',
+        logId: 'restore.completed',
         engine: this.engine,
         filename: result.data.backupFileName,
       },
-      'rollup.completed',
-      RollupService.name,
+      'restore.completed',
+      RestoreService.name,
     );
 
     this.deleteDownloadedFile(filename, local);
@@ -78,12 +78,12 @@ export abstract class RollupService {
     unlinkSync(filename);
     this.logger.log(
       {
-        logId: 'rollup.downloaded-file-deleted',
+        logId: 'restore.downloaded-file-deleted',
         engine: this.engine,
         filename,
       },
-      'rollup.downloaded-file-deleted',
-      RollupService.name,
+      'restore.downloaded-file-deleted',
+      RestoreService.name,
     );
   }
 

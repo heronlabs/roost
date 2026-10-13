@@ -1,14 +1,14 @@
-# 🪶 terminal-cli — Heron CLI (`hcli`)
+# 🪶 roost — Heron database backup & restore CLI
 
-[![npm version](https://img.shields.io/npm/v/@heronlabs/terminal-cli.svg)](https://www.npmjs.com/package/@heronlabs/terminal-cli)
-[![license](https://img.shields.io/npm/l/@heronlabs/terminal-cli.svg)](./LICENSE)
-[![CI](https://github.com/heronlabs/terminal-cli/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/heronlabs/terminal-cli/actions/workflows/continuous-integration.yml)
+[![npm version](https://img.shields.io/npm/v/@heronlabs/roost.svg)](https://www.npmjs.com/package/@heronlabs/roost)
+[![license](https://img.shields.io/npm/l/@heronlabs/roost.svg)](./LICENSE)
+[![CI](https://github.com/heronlabs/roost/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/heronlabs/roost/actions/workflows/continuous-integration.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.x-blue.svg)](https://www.typescriptlang.org/)
 [![NestJS](https://img.shields.io/badge/NestJS-11.x-e0234e.svg)](https://nestjs.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-Database backup & rollup CLI for PostgreSQL and MySQL. Dumps a database to a
+Database backup & restore CLI for PostgreSQL and MySQL. Dumps a database to a
 gzipped SQL file, uploads it to S3 (or keeps it local), and restores it back on
 demand. Built with NestJS + [nest-commander](https://nest-commander.jaymcdoniel.dev/),
 AWS S3, and Luxon. Designed to run as a scheduled cron container on EasyPanel.
@@ -17,6 +17,7 @@ AWS S3, and Luxon. Designed to run as a scheduled cron container on EasyPanel.
 
 - [Why This Project](#why-this-project)
 - [Install](#install)
+- [Migrating from @heronlabs/terminal-cli](#migrating-from-heronlabsterminal-cli)
 - [Quick Start](#quick-start)
 - [Commands](#commands)
 - [Configuration](#configuration)
@@ -37,22 +38,44 @@ Scheduled, type-safe database backups with a single binary:
 
 ## Install
 
-`hcli` is a global CLI binary. Install it globally to put `hcli` on your `PATH`:
+`roost` is a global CLI binary. Install it globally to put `roost` on your `PATH`:
 
 ```bash
-npm i -g @heronlabs/terminal-cli
-# or: pnpm add -g @heronlabs/terminal-cli
+npm i -g @heronlabs/roost
+# or: pnpm add -g @heronlabs/roost
 ```
 
 Then run any command:
 
 ```bash
-hcli version
-hcli psql-backup
+roost version
+roost psql-backup
 ```
 
 You also need the database client tools for the engine you back up: `pg_dump` /
 `psql` for PostgreSQL, `mysqldump` / `mysql` for MySQL.
+
+## Migrating from @heronlabs/terminal-cli
+
+v4.0.0 renamed the project from `terminal-cli` to `roost`:
+
+| Before | Now |
+|---|---|
+| npm package `@heronlabs/terminal-cli` | `@heronlabs/roost` |
+| Docker image `heronlabs/terminal-cli` | `heronlabs/roost` |
+| Binary `hcli` | `roost` |
+| `psql-rollup` / `mysql-rollup` | `psql-restore` / `mysql-restore` |
+| Sentry release `terminal-cli@<version>` | `roost@<version>` |
+| Sentry monitor slug `terminal-cli-backup` | `roost-backup` |
+| Log ids `rollup.*` | `restore.*` |
+
+`hcli` and the `psql-rollup` / `mysql-rollup` commands still work as deprecated
+aliases (in the npm package and the Docker image) until the next major release;
+switch scripts and crontabs to `roost` and `*-restore`. Both packages install an
+`hcli` binary, so uninstall the old one first
+(`npm rm -g @heronlabs/terminal-cli`). Create the `roost-backup` monitor in
+Sentry, and update any alert or filter on the old release name or `rollup.*` log
+ids.
 
 ## Quick Start
 
@@ -68,14 +91,14 @@ You also need the database client tools for the engine you back up: `pg_dump` /
 ### From source (development)
 
 ```bash
-git clone https://github.com/heronlabs/terminal-cli.git
-cd terminal-cli
+git clone https://github.com/heronlabs/roost.git
+cd roost
 pnpm install
 pnpm build         # nest build → bin/
 ```
 
 After `pnpm build`, run the CLI via `node bin/src/main.js <command>` or link the
-`hcli` bin (`pnpm link --global`).
+`roost` bin (`pnpm link --global`).
 
 ### Verify
 
@@ -92,17 +115,17 @@ pnpm dep:cruise    # architecture check
 
 | Command | Description |
 |---|---|
-| `hcli psql-backup` | Back up a PostgreSQL database (S3 by default) |
-| `hcli psql-rollup --filename <file>` | Restore a PostgreSQL database from a backup |
-| `hcli mysql-backup` | Back up a MySQL database (S3 by default) |
-| `hcli mysql-rollup --filename <file>` | Restore a MySQL database from a backup |
-| `hcli version` | Print the current version |
+| `roost psql-backup` | Back up a PostgreSQL database (S3 by default) |
+| `roost psql-restore --filename <file>` | Restore a PostgreSQL database from a backup |
+| `roost mysql-backup` | Back up a MySQL database (S3 by default) |
+| `roost mysql-restore --filename <file>` | Restore a MySQL database from a backup |
+| `roost version` | Print the current version |
 
-Every backup and rollup command exits with code `1` when it fails — the
+Every backup and restore command exits with code `1` when it fails — the
 dump/restore, the database resolution, or the S3 upload/download — so cron and
 monitoring can act on it. A failed dump removes the partial file it left, and a
 failed upload still deletes the local backup file (unless `--local` was passed,
-where the file is the product). A failed remote rollup removes the downloaded
+where the file is the product). A failed remote restore removes the downloaded
 file, or the partial file a failed download left; with `--local` the file is
 your input and is never deleted. S3 transfers are streamed, so backup size is
 not bounded by memory.
@@ -111,23 +134,23 @@ not bounded by memory.
 
 | Flag | Applies to | Meaning |
 |---|---|---|
-| `-f, --filename <name>` | all | Backup filename. Backups default to `<database>-<timestamp>.sql.gz`; rollup requires it. |
+| `-f, --filename <name>` | all | Backup filename. Backups default to `<database>-<timestamp>.sql.gz`; restore requires it. |
 | `--local` | all | Read/write the backup on the local filesystem instead of S3. |
 
 Examples:
 
 ```bash
 # Back up to S3 with an auto-generated, timestamped filename
-hcli psql-backup
+roost psql-backup
 
 # Back up to a local file (no S3)
-hcli psql-backup --local --filename seed.sql.gz
+roost psql-backup --local --filename seed.sql.gz
 
 # Restore from a local file
-hcli psql-rollup --local --filename seed.sql.gz
+roost psql-restore --local --filename seed.sql.gz
 
 # Restore from S3
-hcli mysql-rollup --filename mydb-2026-03-05T12-00-00Z.sql.gz
+roost mysql-restore --filename mydb-2026-03-05T12-00-00Z.sql.gz
 ```
 
 ## Configuration
@@ -147,12 +170,12 @@ All configuration comes from environment variables (see [.env.example](./.env.ex
 Locally, `pnpm start -- <command>` loads variables from a `.env` file via `dotenv`.
 
 Every backup, scheduled or manual, sends an `in_progress` cron check-in and an
-`ok`/`error` one when it ends to the Sentry monitor slug `terminal-cli-backup`
-(rollups never check in). Create that monitor in Sentry with a schedule that
+`ok`/`error` one when it ends to the Sentry monitor slug `roost-backup`
+(restores never check in). Create that monitor in Sentry with a schedule that
 matches the template crontab (`0 */12 * * *`).
 
 An unresolvable `DATABASE_URL`, or a missing `AWS_S3_BUCKET_NAME` when S3 is
-used, fails the command with exit code `1`, like any other backup or rollup
+used, fails the command with exit code `1`, like any other backup or restore
 failure.
 
 ## Architecture
@@ -165,10 +188,10 @@ src/
 ├── application/          # CLI surface (nest-commander)
 │   └── cli/
 │       ├── cli-module.ts
-│       └── commands/     # backup/, rollup/, version/ + per-command option types
+│       └── commands/     # backup/, restore/, version/ + per-command option types
 ├── core/                 # domain logic
-│   ├── interfaces/       # BackupService / RollupService abstract base services
-│   └── services/         # {mysql,psql}-{backup,rollup}-service
+│   ├── interfaces/       # BackupService / RestoreService abstract base services
+│   └── services/         # {mysql,psql}-{backup,restore}-service
 └── infrastructure/       # adapters
     ├── environment/      # EnvironmentService (ConfigService wrapper)
     ├── log/              # nestjs-pino logger module
@@ -176,24 +199,24 @@ src/
 ```
 
 - **`application/`** wires commands into modules — the composition root.
-- **`core/`** holds the backup/rollup flow. The abstract `BackupService`/`RollupService`
+- **`core/`** holds the backup/restore flow. The abstract `BackupService`/`RestoreService`
   own the S3 upload/download + local-cleanup orchestration; engine subclasses implement
   the `dump`/`restore` shell commands.
 - **`infrastructure/`** adapters never import inward (enforced by `pnpm dep:cruise`).
 
 ## Docker & Cron
 
-One published image — `heronlabs/terminal-cli` (built from `Dockerfile`) — carries
-`hcli` on `PATH`, both DB clients, and busybox `crond`. Scheduled backups are
+One published image — `heronlabs/roost` (built from `Dockerfile`) — carries
+`roost` on `PATH`, both DB clients, and busybox `crond`. Scheduled backups are
 deployed from the inline-Dockerfile templates under [`easypanel/`](easypanel/):
-each one is `FROM heronlabs/terminal-cli:<tag>`, adds a 12-hourly crontab, and
+each one is `FROM heronlabs/roost:<tag>`, adds a 12-hourly crontab, and
 runs an immediate backup before starting `crond` in the foreground (dumping
 `printenv` to `/etc/environment` so cron inherits the runtime variables EasyPanel
 injects). See [`easypanel/README.md`](easypanel/README.md) for deploy steps.
 
 Local stack for manual testing — `docker-compose.yml` runs the psql + mysql DBs
 (exposed on ports 5434/3307) and the `psql-integration`/`mysql-integration`
-services that run the backup/rollup round-trip inside the prod-shaped
+services that run the backup/restore round-trip inside the prod-shaped
 `tests-integration/{postgres,mysql}/Dockerfile` images:
 
 ```bash

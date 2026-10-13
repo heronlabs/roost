@@ -4,7 +4,7 @@ import {rmSync, unlinkSync} from 'fs';
 import {pipeline} from 'stream/promises';
 
 import {cliModule} from '../../../../../src/application/cli/cli-module';
-import {MysqlRollupService} from '../../../../../src/core/services/mysql/mysql-rollup-service';
+import {PsqlRestoreService} from '../../../../../src/core/services/psql/psql-restore-service';
 import {
   createTestingModule,
   databaseConnection,
@@ -23,15 +23,15 @@ vi.mock('fs', () => ({
 vi.mock('stream/promises', () => ({pipeline: vi.fn()}));
 
 describe('Given a service', () => {
-  let service: MysqlRollupService;
+  let service: PsqlRestoreService;
 
   beforeEach(async () => {
     const moduleRef = await createTestingModule(cliModule).compile();
-    service = moduleRef.get(MysqlRollupService);
+    service = moduleRef.get(PsqlRestoreService);
   });
 
-  describe('Given mysql rollup', () => {
-    it('Should load the mysql-rollup script from the mysql dir', async () => {
+  describe('Given psql restore', () => {
+    it('Should load the psql-restore script from the psql dir', async () => {
       const filename = `${faker.string.alphanumeric(10)}.sql.gz`;
 
       vi.mocked(execSync).mockImplementationOnce(vi.fn());
@@ -39,13 +39,13 @@ describe('Given a service', () => {
       await service.run(filename, true);
 
       expect(scriptLoaderService.load).toHaveBeenCalledWith(
-        'mysql',
-        'mysql-rollup',
+        'psql',
+        'psql-restore',
       );
     });
 
     it('Should call execSync with the loaded script and pass all dynamic values via env', async () => {
-      const LOADED_SCRIPT = `loaded-mysql-rollup-${faker.string.alphanumeric(8)}`;
+      const LOADED_SCRIPT = `loaded-psql-restore-${faker.string.alphanumeric(8)}`;
       scriptLoaderService.load.mockReturnValue(LOADED_SCRIPT);
 
       const filename = `${faker.string.alphanumeric(10)}.sql.gz`;
@@ -57,11 +57,11 @@ describe('Given a service', () => {
       expect(execSync).toHaveBeenCalledWith(LOADED_SCRIPT, {
         env: {
           ...process.env,
-          DB_USER: databaseConnection.user,
-          DB_HOST: databaseConnection.host,
-          DB_PORT: databaseConnection.port,
-          DB_NAME: databaseConnection.name,
-          MYSQL_PWD: databaseConnection.password,
+          PGHOST: databaseConnection.host,
+          PGPORT: databaseConnection.port,
+          PGDATABASE: databaseConnection.name,
+          PGUSER: databaseConnection.user,
+          PGPASSWORD: databaseConnection.password,
           BACKUP_FILE: filename,
         },
         stdio: ['inherit', 'pipe', 'inherit'],
@@ -70,7 +70,7 @@ describe('Given a service', () => {
     });
 
     it('Should pass a malicious filename through env, never into the command (injection safe)', async () => {
-      const LOADED_SCRIPT = `loaded-mysql-rollup-${faker.string.alphanumeric(8)}`;
+      const LOADED_SCRIPT = `loaded-psql-restore-${faker.string.alphanumeric(8)}`;
       scriptLoaderService.load.mockReturnValue(LOADED_SCRIPT);
 
       const malicious = '$(touch /tmp/pwned).sql.gz';
@@ -96,12 +96,12 @@ describe('Given a service', () => {
 
       expect(loggerService.log).toHaveBeenCalledWith(
         {
-          logId: 'rollup.completed',
-          engine: 'mysql',
+          logId: 'restore.completed',
+          engine: 'postgres',
           filename,
         },
-        'rollup.completed',
-        'RollupService',
+        'restore.completed',
+        'RestoreService',
       );
     });
 
@@ -147,12 +147,12 @@ describe('Given a service', () => {
 
       expect(loggerService.log).toHaveBeenCalledWith(
         {
-          logId: 'rollup.downloaded-file-deleted',
-          engine: 'mysql',
+          logId: 'restore.downloaded-file-deleted',
+          engine: 'postgres',
           filename,
         },
-        'rollup.downloaded-file-deleted',
-        'RollupService',
+        'restore.downloaded-file-deleted',
+        'RestoreService',
       );
     });
 
@@ -188,15 +188,15 @@ describe('Given a service', () => {
 
       expect(loggerService.error).toHaveBeenCalledWith(
         {
-          logId: 'rollup.restore-failed',
-          engine: 'mysql',
+          logId: 'restore.restore-failed',
+          engine: 'postgres',
           filename,
           err: new Error(message),
           errorName: 'Error',
           errorMessage: message,
         },
-        'rollup.restore-failed',
-        'RollupService',
+        'restore.restore-failed',
+        'RestoreService',
       );
     });
 
@@ -211,15 +211,15 @@ describe('Given a service', () => {
 
       expect(loggerService.error).toHaveBeenCalledWith(
         {
-          logId: 'rollup.restore-failed',
-          engine: 'mysql',
+          logId: 'restore.restore-failed',
+          engine: 'postgres',
           filename,
-          err: new Error('mariadb restore failed'),
+          err: new Error('psql restore failed'),
           errorName: 'Error',
-          errorMessage: 'mariadb restore failed',
+          errorMessage: 'psql restore failed',
         },
-        'rollup.restore-failed',
-        'RollupService',
+        'restore.restore-failed',
+        'RestoreService',
       );
     });
 
@@ -277,15 +277,15 @@ describe('Given a service', () => {
 
       expect(loggerService.error).toHaveBeenCalledWith(
         {
-          logId: 'rollup.download-failed',
-          engine: 'mysql',
+          logId: 'restore.download-failed',
+          engine: 'postgres',
           filename,
           err: new Error(message),
           errorName: 'Error',
           errorMessage: message,
         },
-        'rollup.download-failed',
-        'RollupService',
+        'restore.download-failed',
+        'RestoreService',
       );
     });
 
@@ -299,15 +299,15 @@ describe('Given a service', () => {
 
       expect(loggerService.error).toHaveBeenCalledWith(
         {
-          logId: 'rollup.download-failed',
-          engine: 'mysql',
+          logId: 'restore.download-failed',
+          engine: 'postgres',
           filename,
           err: new Error(message),
           errorName: 'Error',
           errorMessage: 'denied for [redacted]',
         },
-        'rollup.download-failed',
-        'RollupService',
+        'restore.download-failed',
+        'RestoreService',
       );
     });
 
@@ -423,12 +423,12 @@ describe('Given a service', () => {
 
       expect(loggerService.log).toHaveBeenCalledWith(
         {
-          logId: 'rollup.downloaded-file-deleted',
-          engine: 'mysql',
+          logId: 'restore.downloaded-file-deleted',
+          engine: 'postgres',
           filename,
         },
-        'rollup.downloaded-file-deleted',
-        'RollupService',
+        'restore.downloaded-file-deleted',
+        'RestoreService',
       );
     });
 

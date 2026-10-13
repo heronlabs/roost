@@ -117,7 +117,7 @@ jobs:
         if: always()
         run: |
           {
-            echo "### PostgreSQL backup→rollup round-trip"
+            echo "### PostgreSQL backup→restore round-trip"
             echo '```'
             grep -E '^(==>|ok:|FAIL:)' /tmp/psql-it.log || true
             echo '```'
@@ -149,7 +149,7 @@ jobs:
         if: always()
         run: |
           {
-            echo "### MySQL backup→rollup round-trip"
+            echo "### MySQL backup→restore round-trip"
             echo '```'
             grep -E '^(==>|ok:|FAIL:)' /tmp/mysql-it.log || true
             echo '```'

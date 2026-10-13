@@ -1,4 +1,4 @@
-# Contributing to @heronlabs/terminal-cli
+# Contributing to @heronlabs/roost
 
 Thanks for your interest in contributing! This is a small, focused project, and
 we keep the bar high: 100% test coverage and 100% mutation score are enforced.

@@ -418,7 +418,7 @@ describe('Given a service', () => {
 
   describe('Given a cron monitor', () => {
     it('Should check in as in progress before the backup', async () => {
-      const monitorSlug = 'terminal-cli-backup';
+      const monitorSlug = 'roost-backup';
 
       vi.mocked(execSync).mockImplementationOnce(vi.fn());
 
@@ -431,7 +431,7 @@ describe('Given a service', () => {
     });
 
     it('Should check in as ok when the backup succeeds', async () => {
-      const monitorSlug = 'terminal-cli-backup';
+      const monitorSlug = 'roost-backup';
       const checkInId = faker.string.uuid();
 
       vi.mocked(Sentry.captureCheckIn).mockReturnValueOnce(checkInId);
@@ -447,7 +447,7 @@ describe('Given a service', () => {
     });
 
     it('Should check in as error when the backup fails', async () => {
-      const monitorSlug = 'terminal-cli-backup';
+      const monitorSlug = 'roost-backup';
       const checkInId = faker.string.uuid();
 
       vi.mocked(Sentry.captureCheckIn).mockReturnValueOnce(checkInId);

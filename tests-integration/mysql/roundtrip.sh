@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # shellcheck source=tests-integration/_lib.sh
 . "$SCRIPT_DIR/../_lib.sh"
 
-HCLI="node $REPO_ROOT/bin/src/main.js"
+ROOST="node $REPO_ROOT/bin/src/main.js"
 SEED_GZ="/tmp/mysql-seed.sql.gz"
 DUMP_GZ="/tmp/mysql-dump.sql.gz"
 SENTINEL="sentinel-row"
@@ -31,11 +31,11 @@ mariadb_scalar() {
     "$DB_NAME" -e "$1" | tr -d '[:space:]'
 }
 
-log "Preparing a gzipped seed for rollup"
+log "Preparing a gzipped seed for restore"
 gzip -c "$SCRIPT_DIR/seed.sql" >"$SEED_GZ"
 
-log "Rolling up the seed via hcli mysql-rollup --local"
-$HCLI mysql-rollup --local -f "$SEED_GZ"
+log "Restoring the seed via roost mysql-restore --local"
+$ROOST mysql-restore --local -f "$SEED_GZ"
 
 log "Asserting the seed restored 3 rows"
 seed_count="$(mariadb_scalar 'SELECT count(*) FROM users;')"
@@ -47,8 +47,8 @@ mariadb_exec \
 mutated_count="$(mariadb_scalar 'SELECT count(*) FROM users;')"
 assert_eq "mutated row count" "$mutated_count" "5"
 
-log "Backing up via hcli mysql-backup --local"
-$HCLI mysql-backup --local -f "$DUMP_GZ"
+log "Backing up via roost mysql-backup --local"
+$ROOST mysql-backup --local -f "$DUMP_GZ"
 
 log "Asserting the backup file exists and is a non-empty gzip"
 if [ ! -s "$DUMP_GZ" ]; then
@@ -64,8 +64,8 @@ table_count="$(mariadb_scalar \
   "SELECT count(*) FROM information_schema.tables WHERE table_schema = '$DB_NAME' AND table_name = 'users';")"
 assert_eq "users table gone after wipe" "$table_count" "0"
 
-log "Restoring the backup via hcli mysql-rollup --local"
-$HCLI mysql-rollup --local -f "$DUMP_GZ"
+log "Restoring the backup via roost mysql-restore --local"
+$ROOST mysql-restore --local -f "$DUMP_GZ"
 
 log "Verifying the restore: 5 rows and the sentinel survived"
 restored_count="$(mariadb_scalar 'SELECT count(*) FROM users;')"

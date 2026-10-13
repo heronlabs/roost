@@ -3,11 +3,11 @@ import {execSync} from 'child_process';
 
 import {EnvironmentService} from '../../../infrastructure/environment/services/environment-service';
 import {S3StorageService} from '../../../infrastructure/storage/services/s3-storage-service';
-import {RollupService} from '../../interfaces/rollup-service';
+import {RestoreService} from '../../interfaces/restore-service';
 import {ScriptLoaderService} from '../script-loader-service';
 
 @Injectable()
-export class PsqlRollupService extends RollupService {
+export class PsqlRestoreService extends RestoreService {
   protected readonly engine = 'postgres' as const;
 
   protected async restore(backupFileName: string) {
@@ -20,7 +20,7 @@ export class PsqlRollupService extends RollupService {
     const {host, port, name, user, password} = db.connection;
 
     try {
-      execSync(this.scriptLoader.load('psql', 'psql-rollup'), {
+      execSync(this.scriptLoader.load('psql', 'psql-restore'), {
         env: {
           ...process.env,
           PGHOST: host,
