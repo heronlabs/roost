@@ -1,3 +1,9 @@
+## v4.0.1 (2026-10-13)
+
+### Documentation
+
+* docs: align claude.md ci/cd section with workflows (#52) (61b16dfd20902c5a5fb8703d61d1bbdf5a014d45)
+
 ## v4.0.0 (2026-10-13)
 
 ### ⚠ BREAKING CHANGES
