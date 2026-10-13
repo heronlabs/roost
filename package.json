@@ -1,10 +1,11 @@
 {
   "author": "Heron Labs",
   "bin": {
-    "hcli": "bin/src/main.js"
+    "hcli": "bin/src/main.js",
+    "roost": "bin/src/main.js"
   },
   "bugs": {
-    "url": "https://github.com/heronlabs/terminal-cli/issues"
+    "url": "https://github.com/heronlabs/roost/issues"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1045.0",
@@ -21,7 +22,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
-  "description": "Heron CLI — database backup & rollup (PostgreSQL/MySQL → S3)",
+  "description": "roost — database backup & restore (PostgreSQL/MySQL → S3)",
   "devDependencies": {
     "@faker-js/faker": "^9.9.0",
     "@nestjs/cli": "^11.0.21",
@@ -55,11 +56,11 @@
   "files": [
     "bin"
   ],
-  "homepage": "https://github.com/heronlabs/terminal-cli#readme",
+  "homepage": "https://github.com/heronlabs/roost#readme",
   "keywords": [
     "cli",
     "backup",
-    "rollup",
+    "restore",
     "postgresql",
     "mysql",
     "s3",
@@ -67,7 +68,7 @@
     "nestjs"
   ],
   "license": "MIT",
-  "name": "@heronlabs/terminal-cli",
+  "name": "@heronlabs/roost",
   "packageManager": "pnpm@10.33.2",
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -86,7 +87,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/heronlabs/terminal-cli.git"
+    "url": "git+https://github.com/heronlabs/roost.git"
   },
   "scripts": {
     "build": "nest build --path tsconfig.bin.json",

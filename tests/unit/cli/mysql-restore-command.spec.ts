@@ -1,10 +1,13 @@
 import {faker} from '@faker-js/faker';
+import {TestingModule} from '@nestjs/testing';
 import {execSync} from 'child_process';
+import {CommandRunnerModule} from 'nest-commander';
+import {CommandTestFactory} from 'nest-commander-testing';
 import {pipeline} from 'stream/promises';
 
 import {cliModule} from '../../../src/application/cli/cli-module';
-import {PsqlRollupCommand} from '../../../src/application/cli/commands/rollup/psql-rollup-command';
-import {RollupOptionsKeys} from '../../../src/application/cli/commands/rollup/types/rollup-options';
+import {MysqlRestoreCommand} from '../../../src/application/cli/commands/restore/mysql-restore-command';
+import {RestoreOptionsKeys} from '../../../src/application/cli/commands/restore/types/restore-options';
 import {
   createTestingModule,
   loggerService,
@@ -19,36 +22,36 @@ vi.mock('fs', () => ({
 }));
 vi.mock('stream/promises', () => ({pipeline: vi.fn()}));
 describe('Given a CLI command', () => {
-  let command: PsqlRollupCommand;
+  let command: MysqlRestoreCommand;
 
   const filename = `${faker.string.alphanumeric(10)}.sql.gz`;
 
   beforeEach(async () => {
     const moduleRef = await createTestingModule(cliModule).compile();
-    command = moduleRef.get(PsqlRollupCommand);
+    command = moduleRef.get(MysqlRestoreCommand);
   });
 
   afterEach(() => {
     process.exitCode = undefined;
   });
 
-  describe('Given command psql-rollup', () => {
-    it('Should run the psql rollup command without logging an error', async () => {
+  describe('Given command mysql-restore', () => {
+    it('Should run the mysql restore command without logging an error', async () => {
       s3Service.send.mockResolvedValueOnce({Body: {}});
 
       vi.mocked(execSync).mockImplementationOnce(vi.fn());
 
-      await command.run([], {[RollupOptionsKeys.FILENAME]: filename});
+      await command.run([], {[RestoreOptionsKeys.FILENAME]: filename});
 
       expect(loggerService.error).toHaveBeenCalledTimes(0);
     });
 
-    it('Should leave the exit code unset when the rollup succeeds', async () => {
+    it('Should leave the exit code unset when the restore succeeds', async () => {
       s3Service.send.mockResolvedValueOnce({Body: {}});
 
       vi.mocked(execSync).mockImplementationOnce(vi.fn());
 
-      await command.run([], {[RollupOptionsKeys.FILENAME]: filename});
+      await command.run([], {[RestoreOptionsKeys.FILENAME]: filename});
 
       expect(process.exitCode).toBeUndefined();
     });
@@ -58,26 +61,26 @@ describe('Given a CLI command', () => {
 
       s3Service.send.mockRejectedValueOnce(new Error(message));
 
-      await command.run([], {[RollupOptionsKeys.FILENAME]: filename});
+      await command.run([], {[RestoreOptionsKeys.FILENAME]: filename});
 
       expect(loggerService.error).toHaveBeenCalledWith(
         {
-          logId: 'rollup.download-failed',
-          engine: 'postgres',
+          logId: 'restore.download-failed',
+          engine: 'mysql',
           filename,
           err: new Error(message),
           errorName: 'Error',
           errorMessage: message,
         },
-        'rollup.download-failed',
-        'RollupService',
+        'restore.download-failed',
+        'RestoreService',
       );
     });
 
     it('Should set exit code 1 when the download fails', async () => {
       s3Service.send.mockRejectedValueOnce(new Error(faker.lorem.words()));
 
-      await command.run([], {[RollupOptionsKeys.FILENAME]: filename});
+      await command.run([], {[RestoreOptionsKeys.FILENAME]: filename});
 
       expect(process.exitCode).toBe(1);
     });
@@ -89,19 +92,19 @@ describe('Given a CLI command', () => {
 
       vi.mocked(pipeline).mockRejectedValueOnce(new Error(message));
 
-      await command.run([], {[RollupOptionsKeys.FILENAME]: filename});
+      await command.run([], {[RestoreOptionsKeys.FILENAME]: filename});
 
       expect(loggerService.error).toHaveBeenCalledWith(
         {
-          logId: 'rollup.download-failed',
-          engine: 'postgres',
+          logId: 'restore.download-failed',
+          engine: 'mysql',
           filename,
           err: new Error(message),
           errorName: 'Error',
           errorMessage: message,
         },
-        'rollup.download-failed',
-        'RollupService',
+        'restore.download-failed',
+        'RestoreService',
       );
     });
 
@@ -109,22 +112,22 @@ describe('Given a CLI command', () => {
       s3Service.send.mockResolvedValueOnce({Body: {}});
 
       vi.mocked(execSync).mockImplementationOnce(() => {
-        throw new Error('psql restore failed');
+        throw new Error('mariadb restore failed');
       });
 
-      await command.run([], {[RollupOptionsKeys.FILENAME]: filename});
+      await command.run([], {[RestoreOptionsKeys.FILENAME]: filename});
 
       expect(loggerService.error).toHaveBeenCalledWith(
         {
-          logId: 'rollup.restore-failed',
-          engine: 'postgres',
+          logId: 'restore.restore-failed',
+          engine: 'mysql',
           filename,
-          err: new Error('psql restore failed'),
+          err: new Error('mariadb restore failed'),
           errorName: 'Error',
-          errorMessage: 'psql restore failed',
+          errorMessage: 'mariadb restore failed',
         },
-        'rollup.restore-failed',
-        'RollupService',
+        'restore.restore-failed',
+        'RestoreService',
       );
     });
 
@@ -132,10 +135,10 @@ describe('Given a CLI command', () => {
       s3Service.send.mockResolvedValueOnce({Body: {}});
 
       vi.mocked(execSync).mockImplementationOnce(() => {
-        throw new Error('psql restore failed');
+        throw new Error('mariadb restore failed');
       });
 
-      await command.run([], {[RollupOptionsKeys.FILENAME]: filename});
+      await command.run([], {[RestoreOptionsKeys.FILENAME]: filename});
 
       expect(process.exitCode).toBe(1);
     });
@@ -145,19 +148,19 @@ describe('Given a CLI command', () => {
         throw faker.lorem.word();
       });
 
-      await command.run([], {[RollupOptionsKeys.FILENAME]: filename});
+      await command.run([], {[RestoreOptionsKeys.FILENAME]: filename});
 
       expect(loggerService.error).toHaveBeenCalledWith(
         {
-          logId: 'rollup.download-failed',
-          engine: 'postgres',
+          logId: 'restore.download-failed',
+          engine: 'mysql',
           filename,
           err: new Error('Error downloading file from S3'),
           errorName: 'Error',
           errorMessage: 'Error downloading file from S3',
         },
-        'rollup.download-failed',
-        'RollupService',
+        'restore.download-failed',
+        'RestoreService',
       );
     });
 
@@ -171,8 +174,8 @@ describe('Given a CLI command', () => {
       vi.mocked(execSync).mockImplementationOnce(vi.fn());
 
       await command.run([], {
-        [RollupOptionsKeys.FILENAME]: filename,
-        [RollupOptionsKeys.LOCAL]: true,
+        [RestoreOptionsKeys.FILENAME]: filename,
+        [RestoreOptionsKeys.LOCAL]: true,
       });
 
       expect(loggerService.error).toHaveBeenCalledTimes(0);
@@ -180,6 +183,56 @@ describe('Given a CLI command', () => {
 
     it('Should return true when parsing local option', () => {
       expect(command.parseLocal()).toBeTruthy();
+    });
+  });
+
+  describe('Given the mysql-restore command line', () => {
+    let app: TestingModule;
+
+    beforeEach(async () => {
+      app = await createTestingModule({
+        ...cliModule,
+        imports: [
+          ...(cliModule.imports ?? []),
+          CommandRunnerModule.forModule(),
+        ],
+      }).compile();
+    });
+
+    it('Should dispatch mysql-restore to the restore command', async () => {
+      const run = vi.spyOn(app.get(MysqlRestoreCommand), 'run');
+
+      vi.mocked(execSync).mockImplementationOnce(vi.fn());
+
+      await CommandTestFactory.run(app, [
+        'mysql-restore',
+        '--local',
+        '-f',
+        filename,
+      ]);
+
+      expect(run).toHaveBeenCalledWith([], {
+        [RestoreOptionsKeys.FILENAME]: filename,
+        [RestoreOptionsKeys.LOCAL]: true,
+      });
+    });
+
+    it('Should dispatch the deprecated mysql-rollup alias to the restore command', async () => {
+      const run = vi.spyOn(app.get(MysqlRestoreCommand), 'run');
+
+      vi.mocked(execSync).mockImplementationOnce(vi.fn());
+
+      await CommandTestFactory.run(app, [
+        'mysql-rollup',
+        '--local',
+        '-f',
+        filename,
+      ]);
+
+      expect(run).toHaveBeenCalledWith([], {
+        [RestoreOptionsKeys.FILENAME]: filename,
+        [RestoreOptionsKeys.LOCAL]: true,
+      });
     });
   });
 });

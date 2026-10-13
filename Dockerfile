@@ -32,8 +32,9 @@ COPY --from=builder /app/bin ./bin
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
-RUN printf '#!/bin/sh\nexec node /app/bin/src/main.js "$@"\n' > /usr/local/bin/hcli \
-  && chmod +x /usr/local/bin/hcli \
+RUN printf '#!/bin/sh\nexec node /app/bin/src/main.js "$@"\n' > /usr/local/bin/roost \
+  && chmod +x /usr/local/bin/roost \
+  && ln -s /usr/local/bin/roost /usr/local/bin/hcli \
   && chown -R node:node /app
 
 USER node

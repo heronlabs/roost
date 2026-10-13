@@ -106,7 +106,7 @@ jobs:
       - uses: docker/metadata-action@v6
         id: meta
         with:
-          images: heronlabs/terminal-cli
+          images: heronlabs/roost
           tags: |
             type=raw,value=${{ needs.release.outputs.tag }}
 

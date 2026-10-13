@@ -2,18 +2,18 @@
 
 Inline-Dockerfile templates that schedule a database backup on
 [EasyPanel](https://easypanel.io/). Each service runs `FROM
-heronlabs/terminal-cli:<tag>` — the one generic published image, which already
-carries `hcli`, both DB clients, and busybox `crond` — adds a 12-hourly crontab,
+heronlabs/roost:<tag>` — the one generic published image, which already
+carries `roost`, both DB clients, and busybox `crond` — adds a 12-hourly crontab,
 and runs an immediate backup before starting `crond` in the foreground.
 
 | File | Engine | Command |
 |---|---|---|
-| `psql-backup.json` | PostgreSQL | `hcli psql-backup` |
-| `mysql-backup.json` | MySQL | `hcli mysql-backup` |
+| `psql-backup.json` | PostgreSQL | `roost psql-backup` |
+| `mysql-backup.json` | MySQL | `roost mysql-backup` |
 
 This replaces the old dedicated `cron-tab-postgres.dockerfile` /
 `cron-tab-mysql.dockerfile` images: instead of publishing one image per engine,
-CD now ships a single `heronlabs/terminal-cli` image and the schedule lives in
+CD now ships a single `heronlabs/roost` image and the schedule lives in
 these per-deployment inline Dockerfiles.
 
 ## Deploy
@@ -23,9 +23,9 @@ these per-deployment inline Dockerfiles.
 2. Open the service's **Source** tab and choose **Dockerfile**.
 3. Paste the inline Dockerfile (the `source.dockerfile` value from the template),
    or rely on the schema you imported in step 1.
-4. Replace `CHANGE_ME` with a published `heronlabs/terminal-cli` tag — CD tags
+4. Replace `CHANGE_ME` with a published `heronlabs/roost` tag — CD tags
    the image with the semver release only, so pin a real version (e.g.
-   `heronlabs/terminal-cli:2.0.2`).
+   `heronlabs/roost:4.0.0`).
 5. Set the environment variables (table below).
 6. Deploy.
 
@@ -47,9 +47,13 @@ these per-deployment inline Dockerfiles.
   Changing the cadence means editing the Dockerfile and redeploying — it is not
   an environment variable.
 - **Sentry cron monitor.** Every backup (scheduled, the one at container start,
-  or a manual `hcli`) checks in `in_progress` then `ok`/`error` to the fixed
-  monitor slug `terminal-cli-backup`. Create that monitor in Sentry with the
+  or a manual `roost`) checks in `in_progress` then `ok`/`error` to the fixed
+  monitor slug `roost-backup`. Create that monitor in Sentry with the
   crontab schedule `0 */12 * * *`.
-- **`USER root` is required.** The base `heronlabs/terminal-cli` image runs as
+- **`USER root` is required.** The base `heronlabs/roost` image runs as
   `USER node`, but writing `/etc/crontabs/root` and running `crond` need root, so
   the inline Dockerfile switches back to root before installing the crontab.
+- **Migrating from `heronlabs/terminal-cli`.** New releases are published only
+  as `heronlabs/roost`; switch the `FROM` line to it. The image keeps `hcli` as a
+  deprecated alias of `roost` until the next major, so an existing crontab that
+  calls `hcli` still runs.

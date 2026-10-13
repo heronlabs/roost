@@ -6,7 +6,7 @@ Please **do not** open a public GitHub issue for security vulnerabilities.
 
 Report them privately through GitHub's security advisories:
 
-➡️ [Report a vulnerability](https://github.com/heronlabs/terminal-cli/security/advisories/new)
+➡️ [Report a vulnerability](https://github.com/heronlabs/roost/security/advisories/new)
 
 This opens a private channel where we can discuss and fix the issue before any
 public disclosure. If you are unable to use GitHub advisories, you may reach out
@@ -19,7 +19,7 @@ the remediation.
 
 ## Supported Versions
 
-Only the latest published version of `@heronlabs/terminal-cli` on npm receives
+Only the latest published version of `@heronlabs/roost` on npm receives
 security fixes. Please upgrade to the latest release before reporting an issue.
 
 | Version | Supported          |

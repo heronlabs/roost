@@ -4,7 +4,7 @@
   "concurrency": 2,
   "coverageAnalysis": "perTest",
   "dashboard": {
-    "project": "@heronlabs/terminal-cli"
+    "project": "@heronlabs/roost"
   },
   "ignorePatterns": ["bin", "node_modules", "reports"],
   "ignoreStatic": true,

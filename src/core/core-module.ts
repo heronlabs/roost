@@ -3,9 +3,9 @@ import {Logger, Module, ModuleMetadata} from '@nestjs/common';
 import {EnvironmentModule} from '../infrastructure/environment/environment-module';
 import {StorageModule} from '../infrastructure/storage/storage-module';
 import {MysqlBackupService} from './services/mysql/mysql-backup-service';
-import {MysqlRollupService} from './services/mysql/mysql-rollup-service';
+import {MysqlRestoreService} from './services/mysql/mysql-restore-service';
 import {PsqlBackupService} from './services/psql/psql-backup-service';
-import {PsqlRollupService} from './services/psql/psql-rollup-service';
+import {PsqlRestoreService} from './services/psql/psql-restore-service';
 import {ScriptLoaderService} from './services/script-loader-service';
 
 const coreModule: ModuleMetadata = {
@@ -14,16 +14,16 @@ const coreModule: ModuleMetadata = {
     Logger,
     ScriptLoaderService,
     MysqlBackupService,
-    MysqlRollupService,
+    MysqlRestoreService,
     PsqlBackupService,
-    PsqlRollupService,
+    PsqlRestoreService,
   ],
   exports: [
     ScriptLoaderService,
     MysqlBackupService,
-    MysqlRollupService,
+    MysqlRestoreService,
     PsqlBackupService,
-    PsqlRollupService,
+    PsqlRestoreService,
   ],
 };
 @Module(coreModule)

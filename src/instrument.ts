@@ -10,7 +10,7 @@ const {version} = JSON.parse(
 Sentry.init({
   dsn: process.env.SENTRY_DSN || undefined,
   environment: process.env.SENTRY_ENVIRONMENT || 'production',
-  release: `terminal-cli@${version}`,
+  release: `roost@${version}`,
   sendDefaultPii: false,
   enableLogs: true,
   integrations: [Sentry.pinoIntegration({error: {levels: ['error']}})],

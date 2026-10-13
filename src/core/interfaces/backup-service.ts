@@ -26,7 +26,7 @@ export abstract class BackupService {
   }
 
   public async run(local: boolean, filename?: string) {
-    const monitorSlug = 'terminal-cli-backup';
+    const monitorSlug = 'roost-backup';
 
     const checkInId = Sentry.captureCheckIn({
       monitorSlug,
