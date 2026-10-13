@@ -118,15 +118,18 @@ subprocesses via env vars.
 
 ## CI/CD
 
+Every job in both workflows runs on GitHub-hosted `ubuntu-24.04`.
+
 ### CI (`.github/workflows/continuous-integration.yml`)
 
-Triggers on PR to `main` (plus `workflow_dispatch`). A sequential gate chain
-that fans out at the end — each job `needs` the previous, so the first failure
-halts the rest:
+Triggers on PR to `main` (plus `workflow_dispatch`). Two fan-out levels — a job
+starts only once every job it `needs` has passed, so a failure halts only the
+jobs gated on it (an **audit** or **lint** failure does not stop **unit** and
+the jobs after it):
 
-`install → audit → lint → unit → { mutation ∥ integration-postgres ∥ integration-mysql }`
+`install → { audit ∥ lint ∥ unit }`, then `unit → { mutation ∥ integration-postgres ∥ integration-mysql }`
 
-1. **install** — install deps, `pnpm build` (caches `node_modules` + `bin`)
+1. **install** — `pnpm install --frozen-lockfile` + `pnpm build`; a gate only — no `node_modules`/`bin` is cached or shared, so **audit**, **lint**, **unit** and **mutation** each re-run `pnpm install --frozen-lockfile` (`actions/setup-node` caches only the pnpm store)
 2. **audit** — `pnpm dep:cruise` + `pnpm audit --prod --audit-level=high`
 3. **lint** — `pnpm lint:check`
 4. **unit** — `pnpm test:unit` + coverage artifact
@@ -135,19 +138,33 @@ halts the rest:
 
 ### CD — Releases (`.github/workflows/continuous-deployment.yml`)
 
-Runs automatically on every push to `main` (defaulting the bump to `patch`), plus manual `workflow_dispatch` to pick major/minor/patch. Bumps a semver tag via `heronlabs/action-tag-release-build@v6`.
+Runs automatically on every push to `main`, plus manual `workflow_dispatch` to
+force a major/minor/patch bump. The `release` job runs
+`heronlabs/action-tag-release-build@v7` with `bumpNpm: true` and the built-in
+`github.token`, bumping `version.txt` + `package.json` and tagging `vX.Y.Z`.
+On push `semantic` is empty, so the bump is inferred from the HEAD commit
+(Conventional Commits): a `!` after the type/scope or a `BREAKING CHANGE:`
+footer → major, `feat:` → minor, anything else → patch. Squash-merge PRs so the
+HEAD commit's subject is the Conventional Commit PR title (GitHub uses the
+commit's own subject for a single-commit PR); a merge commit
+(`Merge pull request …`) falls back to patch.
 
 | Input | Values |
 |---|---|
-| `semantic` | major, minor, patch |
+| `semantic` | major, minor, patch (`workflow_dispatch` only, default `patch`) |
 
 The `publish-npm` job runs `npm publish --access public --provenance` and the
-`publish-docker` job builds and pushes `heronlabs/roost` to Docker Hub.
-Both run in parallel after the release tag is created, carrying
-`id-token: write` (plus `contents: read`) permission — enabled now that the repo
-is public, since npm only signs sigstore provenance for public source repos.
+`publish-docker` job builds and pushes `heronlabs/roost:vX.Y.Z` (release tag
+only, `linux/amd64`) to Docker Hub. Both run in parallel after the release tag
+is created and check out that tag. Permissions per job: `release` has
+`contents: write` + `id-token: write`; `publish-npm` has `contents: read` +
+`id-token: write`, which `--provenance` needs (npm only signs sigstore
+provenance for public source repos); `publish-docker` has `contents: read` only
+(its BuildKit provenance + SBOM attestations need no OIDC token).
 
-**Secret:** `PAT` must be set in GitHub repo settings.
+**Secrets:** `NPM_TOKEN` (`NODE_AUTH_TOKEN` for `npm publish`),
+`DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` (Docker Hub login), set in GitHub
+repo settings. No PAT — the release job uses the built-in `github.token`.
 
 ## Docker
 
