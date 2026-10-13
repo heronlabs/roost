@@ -1,3 +1,13 @@
+## v4.0.0 (2026-10-13)
+
+### ⚠ BREAKING CHANGES
+
+* feat!: rename terminal-cli to roost and rollup to restore (#51) (b07d134f8d2f40c340a5b67c86cad63758dd57a6)
+
+### Features
+
+* feat!: rename terminal-cli to roost and rollup to restore (#51) (b07d134f8d2f40c340a5b67c86cad63758dd57a6)
+
 ## v3.1.1 (2026-09-28)
 
 ### Miscellaneous Chores
