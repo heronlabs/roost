@@ -140,7 +140,7 @@ the jobs after it):
 
 Runs automatically on every push to `main`, plus manual `workflow_dispatch` to
 force a major/minor/patch bump. The `release` job runs
-`heronlabs/action-tag-release-build@v7` with `bumpNpm: true` and the built-in
+`heronlabs/action-tag-release@v7` with `bumpNpm: true` and the built-in
 `github.token`, bumping `version.txt` + `package.json` and tagging `vX.Y.Z`.
 On push `semantic` is empty, so the bump is inferred from the HEAD commit
 (Conventional Commits): a `!` after the type/scope or a `BREAKING CHANGE:`
